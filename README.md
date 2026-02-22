@@ -55,8 +55,8 @@ Por ello:
 
 ### 🐧 Debian / Ubuntu
 Aquí todo funciona a las mil maravillas, como es de esperar en un sistema serio:
-```bash
-sudo apt update && sudo apt install -y ffmpeg mkvtoolnix bc lshw```
+"bash
+sudo apt update && sudo apt install -y ffmpeg mkvtoolnix bc lshw"
 
 📩 Contacto y Resistencia
 Si tienes los conversores que busco, si el script ha salvado a tu GPU del "sacrificio planificado", o si simplemente quieres enviarle un saludo (de los que llevan un dedo levantado) a los CEOs de NVIDIA y Microsoft:
