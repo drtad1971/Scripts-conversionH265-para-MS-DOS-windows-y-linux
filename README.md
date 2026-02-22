@@ -49,7 +49,7 @@ Viva Obsole$cencia De$programada, no espera Obsolescencia "Sugerida", espera me 
 Debido a que Microsoft prefiere apoyar a creadores de software de pago (muchas veces llenos de bugs) para que gastes tu dinero en vez de usar versiones open que la mayoría de las veces funciona mucho mejor, **`winget` no baja las últimas versiones de FFmpeg y directamente ignora MKVToolNix**. 
 
 Por ello:
-1. **He incluido los binarios actualizados dentro del archivo comprimido**.
+1. Hay que descargar al mismo directorio el ffmpeg para windows y de mkvtoolnix poner los siguientes archivos mkvinfo, mkvmerge y mkvpropedit.
 2. El script usará las versiones adjuntas para asegurar que todo funcione a la primera.
 3. **Aviso de Hardware:** En hardware "vintage" (GTX 1080 / RX 480 o inferior), el script usará CPU por defecto.
 
