@@ -19,30 +19,137 @@ echo %B%================================================================%N%
 powershell -NoProfile -Command "(Get-CimInstance Win32_Processor).Name" > "%temp%\cpu.tmp"
 set /p cpu_name=<"%temp%\cpu.tmp"
 
-set "has_nv=0" & set "has_amd=0" & set "has_intel=0" & set "gpu_list="
+:: ================================================================
+:: BLOQUE DE DETECCIÓN AVANZADA (NVIDIA / AMD / INTEL)
+:: ================================================================
+set "has_nv=0"
+set "has_amd=0"
+set "has_intel=0"
+set "gpu_list="
+
 powershell -NoProfile -Command "(Get-CimInstance Win32_VideoController).Name" > "%temp%\gpus.tmp"
 
 for /f "usebackq tokens=*" %%g in ("%temp%\gpus.tmp") do (
     set "gpu_current=%%g"
     set "status=[NO APTO]"
-    echo !gpu_current! | findstr /i "NVIDIA" >nul && (
-        ffmpeg.exe -f lavfi -i color=c=black:s=64x64:n=1 -vframes 1 -c:v hevc_nvenc -f null - >nul 2>&1
-        if !errorlevel! equ 0 (set "has_nv=1" & set "status=[OK]")
+
+    :: ============================================================
+    :: NVIDIA — Test HEVC 8‑bit y Main10
+    :: ============================================================
+    echo %%g | findstr /i "NVIDIA" >nul && (
+
+        :: Test HEVC 8‑bit
+        ffmpeg.exe -hide_banner -loglevel error ^
+            -f lavfi -i color=c=black:s=64x64 ^
+            -frames:v 1 -c:v hevc_nvenc -y nul 2>nv8.log
+
+        set "nv8=0"
+        findstr /i "InitializeEncoder" nv8.log >nul
+        if errorlevel 1 set "nv8=1"
+        del "nv8.log" >nul 2>&1
+
+        :: Test HEVC Main10
+        ffmpeg.exe -hide_banner -loglevel error ^
+            -f lavfi -i color=c=black:s=64x64 ^
+            -pix_fmt yuv420p10le -frames:v 1 -c:v hevc_nvenc -y nul 2>nv10.log
+
+        set "nv10=0"
+        findstr /i "InitializeEncoder" nv10.log >nul
+        if errorlevel 1 set "nv10=1"
+        del "nv10.log" >nul 2>&1
+
+        if !nv8!==1 (
+            set "has_nv=1"
+            if !nv10!==1 (
+                set "status=[OK] (HEVC Main10)"
+            ) else (
+                set "status=[OK] (HEVC 8-bit)"
+            )
+        ) else (
+            set "status=[NO APTO]"
+        )
     )
-    echo !gpu_current! | findstr /i "AMD ATI" >nul && (
-        ffmpeg.exe -f lavfi -i color=c=black:s=64x64:n=1 -vframes 1 -c:v hevc_amf -f null - >nul 2>&1
-        if !errorlevel! equ 0 (set "has_amd=1" & set "status=[OK]")
+
+    :: ============================================================
+    :: AMD — Test HEVC 8‑bit y Main10
+    :: ============================================================
+    echo %%g | findstr /i "AMD ATI" >nul && (
+
+        :: Test HEVC 8‑bit
+        ffmpeg.exe -hide_banner -loglevel error ^
+            -f lavfi -i color=c=black:s=64x64 ^
+            -frames:v 1 -c:v hevc_amf -y nul 2>amf8.log
+
+        set "amd8=0"
+        findstr /i "Initialize" amf8.log >nul
+        if errorlevel 1 set "amd8=1"
+        del "amf8.log" >nul 2>&1
+
+        :: Test HEVC Main10
+        ffmpeg.exe -hide_banner -loglevel error ^
+            -f lavfi -i color=c=black:s=64x64 ^
+            -pix_fmt yuv420p10le -frames:v 1 -c:v hevc_amf -y nul 2>amf10.log
+
+        set "amd10=0"
+        findstr /i "Initialize" amf10.log >nul
+        if errorlevel 1 set "amd10=1"
+        del "amf10.log" >nul 2>&1
+
+        if !amd8!==1 (
+            set "has_amd=1"
+            if !amd10!==1 (
+                set "status=[OK] (HEVC Main10)"
+            ) else (
+                set "status=[OK] (HEVC 8-bit)"
+            )
+        ) else (
+            set "status=[NO APTO]"
+        )
     )
-    echo !gpu_current! | findstr /i "Intel" >nul && (
-        ffmpeg.exe -f lavfi -i color=c=black:s=64x64:n=1 -vframes 1 -c:v hevc_qsv -f null - >nul 2>&1
-        if !errorlevel! equ 0 (set "has_intel=1" & set "status=[OK]")
+
+    :: ============================================================
+    :: INTEL — Test HEVC 8‑bit y Main10
+    :: ============================================================
+    echo %%g | findstr /i "Intel" >nul && (
+
+        :: Test HEVC 8‑bit
+        ffmpeg.exe -hide_banner -loglevel error ^
+            -f lavfi -i color=c=black:s=64x64 ^
+            -frames:v 1 -c:v hevc_qsv -y nul 2>qsv8.log
+
+        set "qsv8=0"
+        findstr /i "Error" qsv8.log >nul
+        if errorlevel 1 set "qsv8=1"
+        del "qsv8.log" >nul 2>&1
+
+        :: Test HEVC Main10
+        ffmpeg.exe -hide_banner -loglevel error ^
+            -f lavfi -i color=c=black:s=64x64 ^
+            -pix_fmt yuv420p10le -frames:v 1 -c:v hevc_qsv -y nul 2>qsv10.log
+
+        set "qsv10=0"
+        findstr /i "Error" qsv10.log >nul
+        if errorlevel 1 set "qsv10=1"
+        del "qsv10.log" >nul 2>&1
+
+        if !qsv8!==1 (
+            set "has_intel=1"
+            if !qsv10!==1 (
+                set "status=[OK] (HEVC Main10)"
+            ) else (
+                set "status=[OK] (HEVC 8-bit)"
+            )
+        ) else (
+            set "status=[NO APTO]"
+        )
     )
+
     set "gpu_list=!gpu_list! -- !gpu_current! !status!"
 )
+
 del "%temp%\cpu.tmp" "%temp%\gpus.tmp" >nul 2>&1
 
 set "modo=NINGUNO" & set "codec=" & set "params="
-
 :inicio
 cls
 echo %B%================================================================%N%
@@ -128,7 +235,6 @@ if "%modo%"=="GPU NVIDIA" set "params=-rc vbr -cq 23 -b:v 0 -preset %p_nv%"
 if "%modo%"=="GPU AMD"    set "params=-rc cqp -qp_p 23 -qp_i 23 -quality %p_amd% -usage transcoding"
 if "%modo%"=="GPU INTEL"  set "params=-global_quality 23 -preset %p_cpu%"
 goto inicio
-
 :op1
 cls
 set /p origen="Origen: "
@@ -143,51 +249,83 @@ set "reporte=%destino%\peliculas ripeadas.txt"
 if exist "%reporte%" del "%reporte%"
 
 set "total_archivos=0"
-for %%e in (mkv mp4 mov avi mpeg mpg ogv) do (for %%f in ("%origen%\*.%%e") do set /a total_archivos+=1)
+for %%e in (mkv mp4 mov avi mpeg mpg ogv) do (
+    for %%f in ("%origen%\*.%%e") do (
+        set /a total_archivos+=1
+    )
+)
 
 echo ================================================= >> "%reporte%"
 echo   REPORTE DE CONVERSION V4.1.0 - %DATE% %TIME% >> "%reporte%"
 echo   MOTOR UTILIZADO: %modo% >> "%reporte%"
 echo   TOTAL ARCHIVOS A PROCESAR: %total_archivos% >> "%reporte%"
 echo   LISTADO: >> "%reporte%"
-for %%e in (mkv mp4 mov avi mpeg mpg ogv) do (for %%f in ("%origen%\*.%%e") do echo   - %%~nxf >> "%reporte%")
+for %%e in (mkv mp4 mov avi mpeg mpg ogv) do (
+    for %%f in ("%origen%\*.%%e") do (
+        echo   - %%~nxf >> "%reporte%"
+    )
+)
 echo ================================================= >> "%reporte%"
 
 set "actual=0"
 for %%e in (mkv mp4 mov avi mpeg mpg ogv) do (
     for %%f in ("%origen%\*.%%e") do (
+
         set /a actual+=1
         set "archivo=%%~nxf"
         set "purename=%%~nf"
+
         echo Procesando [!actual!/%total_archivos%]: "!archivo!"
 
-        for /f %%a in ('powershell -command "[math]::round((Get-Item -LiteralPath '%%f').Length / 1MB, 2)"') do set "size_orig=%%a"
+        for /f %%a in ('powershell -command "[math]::round((Get-Item -LiteralPath '%%f').Length / 1MB, 2)"') do (
+            set "size_orig=%%a"
+        )
+
         set "t_inicio=!time!"
         echo ARCHIVO: !archivo! >> "%reporte%"
         echo - Inicio: !t_inicio! >> "%reporte%"
         echo - Tamano Original: !size_orig! MB >> "%reporte%"
 
         ffmpeg.exe -i "%%f" -an -sn -pix_fmt yuv420p10le -c:v %codec% %params% -profile:v main10 -level:v 5.1 "%destino%\video_!archivo!.mkv" -y
+
         mkvmerge.exe -o "%destino%\!purename!.mkv" -D "%%f" -A -S -T -M -B --no-chapters "%destino%\video_!archivo!.mkv"
-        del "%destino%\video_!archivo!.mkv"
+
+        del "%destino%\video_!archivo!.mkv" >nul 2>&1
 
         set "t_fin=!time!"
-        for /f %%a in ('powershell -command "[math]::round((Get-Item -LiteralPath '%destino%\!purename!.mkv').Length / 1MB, 2)"') do set "size_final=%%a"
+
+        for /f %%a in ('powershell -command "[math]::round((Get-Item -LiteralPath '%destino%\!purename!.mkv').Length / 1MB, 2)"') do (
+            set "size_final=%%a"
+        )
+
         set "s_orig_ps=!size_orig:,=.!"
         set "s_final_ps=!size_final:,=.!"
 
-        for /f "tokens=1,2,3" %%a in ('powershell -command "$i=[datetime]::Parse('!t_inicio!'.Trim().Replace(',','.')); $f=[datetime]::Parse('!t_fin!'.Trim().Replace(',','.')); if($f -lt $i){$f=$f.AddDays(1)}; $dur=$f-$i; $ahorro=[math]::round(!s_orig_ps! - !s_final_ps!, 2); $perc=[math]::round(($ahorro/!s_orig_ps!)*100, 2); write-host ($dur.ToString('hh\:mm\:ss') + ' ' + $ahorro + ' ' + $perc)"') do (
+        for /f "tokens=1,2,3" %%a in ('
+            powershell -command "
+                $i=[datetime]::Parse('!t_inicio!'.Trim().Replace(',','.'));
+                $f=[datetime]::Parse('!t_fin!'.Trim().Replace(',','.'));
+                if($f -lt $i){$f=$f.AddDays(1)}
+                $dur=$f-$i;
+                $ahorro=[math]::round(!s_orig_ps! - !s_final_ps!, 2);
+                $perc=[math]::round(($ahorro/!s_orig_ps!)*100, 2);
+                write-host ($dur.ToString('hh\:mm\:ss') + ' ' + $ahorro + ' ' + $perc)
+            "
+        ') do (
             set "duracion=%%a"
             set "ahorro_mb=%%b"
             set "porcentaje=%%c"
         )
+
         echo - Finalizado: !t_fin! >> "%reporte%"
         echo - Duracion: !duracion! >> "%reporte%"
         echo - Tamano Final: !size_final! MB >> "%reporte%"
         echo - Ahorro: !ahorro_mb! MB ^(!porcentaje!%%^) >> "%reporte%"
         echo ------------------------------------------------- >> "%reporte%"
+
     )
 )
+
 echo.
 echo PROCESO COMPLETADO V4.1.0.
 pause
