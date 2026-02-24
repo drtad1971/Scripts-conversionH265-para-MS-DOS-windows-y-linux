@@ -41,7 +41,7 @@ comprobar_dependencias() {
 detectar_hardware() {
     pintar_fondo
     echo -e "${BLANCO_B}================================================================${BG_AZUL}"
-    echo -e "${BLANCO_B}   DETECTANDO HARDWARE (V4.1.0)${BG_AZUL}"
+    echo -e "${BLANCO_B}   DETECTANDO HARDWARE (V4.1.0) - TEST REAL 10-BIT${BG_AZUL}"
     echo -e "${BLANCO_B}================================================================${BG_AZUL}"
 
     cpu_name=$(grep -m 1 "model name" /proc/cpuinfo | cut -d':' -f2 | sed -e 's/^[[:space:]]*//')
@@ -52,16 +52,16 @@ detectar_hardware() {
     
     while IFS= read -r line; do
         gpu_current=$(echo "$line" | cut -d':' -f3 | sed -e 's/^[[:space:]]*//')
-        status="[NO APTO H265]"
+        status="[NO APTO 10-BIT]"
+        
         if echo "$line" | grep -iq "NVIDIA"; then
-            ffmpeg -encoders 2>/dev/null | grep -iq "hevc_nvenc" && { has_nv=1; status="[COMPATIBLE]"; }
+            ffmpeg -f lavfi -i color=c=black:s=64x64:n=1 -pix_fmt yuv420p10le -vframes 1 -c:v hevc_nvenc -f null - &>/dev/null && { has_nv=1; status="[OK 10-BIT]"; }
             gpu_list="$gpu_list -- $gpu_current $status"
         elif echo "$line" | grep -iqE "AMD|ATI"; then
-            ffmpeg -encoders 2>/dev/null | grep -iq "hevc_amf" && { has_amd=1; status="[COMPATIBLE]"; }
+            ffmpeg -f lavfi -i color=c=black:s=64x64:n=1 -pix_fmt yuv420p10le -vframes 1 -c:v hevc_amf -f null - &>/dev/null && { has_amd=1; status="[OK 10-BIT]"; }
             gpu_list="$gpu_list -- $gpu_current $status"
         elif echo "$line" | grep -iq "Intel"; then
-            ffmpeg -encoders 2>/dev/null | grep -iq "hevc_qsv" && { has_intel=1; status="[COMPATIBLE]"; }
-            [[ $has_intel -eq 0 ]] && status="[SOLO H264]"
+            ffmpeg -f lavfi -i color=c=black:s=64x64:n=1 -pix_fmt yuv420p10le -vframes 1 -c:v hevc_qsv -f null - &>/dev/null && { has_intel=1; status="[OK 10-BIT]"; }
             gpu_list="$gpu_list -- $gpu_current $status"
         fi
     done <<< "$gpus"
@@ -77,9 +77,9 @@ menu_motor() {
     echo -e "   SELECCIONE MOTOR DE CODIFICADO${BG_AZUL}"
     echo -e "${BLANCO_B}================================================================${BG_AZUL}"
     echo "1. CPU (libx265) : OK"
-    [[ $has_nv -eq 1 ]] && echo "2. GPU NVIDIA NVENC : OK" || echo "[X] NVIDIA NVENC : No disponible"
-    [[ $has_amd -eq 1 ]] && echo "3. GPU AMD AMF : OK" || echo "[X] AMD AMF : No disponible"
-    [[ $has_intel -eq 1 ]] && echo "4. GPU INTEL QuickSync : OK" || echo "[X] INTEL QSV H265 : No disponible"
+    [[ $has_nv -eq 1 ]] && echo "2. GPU NVIDIA NVENC : OK 10-BIT" || echo "[X] NVIDIA NVENC : No disponible o no 10-bit"
+    [[ $has_amd -eq 1 ]] && echo "3. GPU AMD AMF : OK 10-BIT" || echo "[X] AMD AMF : No disponible o no 10-bit"
+    [[ $has_intel -eq 1 ]] && echo "4. GPU INTEL QuickSync : OK 10-BIT" || echo "[X] INTEL QSV : No disponible o no 10-bit"
     echo ""
     read -p "Seleccione motor [1-4]: " mot
 
@@ -249,4 +249,3 @@ while true; do
         4) salir_limpio ;;
     esac
 done
-
