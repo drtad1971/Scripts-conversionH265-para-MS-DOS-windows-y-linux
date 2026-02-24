@@ -17,9 +17,9 @@ Scripts automatizados para convertir tu colección de video a **H.265 (HEVC) de 
 ## 📜 Historial de Evolución (Changelog)
 
 ### v1.0.0 - Arqueología Digital
-*   **Origen:** Creada originalmente para fines condones, digo preservativos (es humor, no me matéis), esta versión la encontré recientemente en un **disquete** perdido.
+*   **Origen:** Creada originalmente para fines condones, digo preservativos (es humor, no me matéis), esta versión la encontré recientemente en un **disquete** perdido de mi coleccion, es lo que tiene el diogenes digital y guardar todo desde la epoca del ZX Spectrum.
 *   **Estado:** La he actualizado lo que he podido, pero me faltan los conversores de video de la época que se han perdido en el tiempo. 
-*   **🔍 SOS:** Si alguien conserva los conversores originales de finales de los 80, los 90 y principios de los 2000 en especial el cmpeg encoder de Christian michel , que me contacte por favor en mi mail (está al final).
+*   **🔍 SOS:** Si alguien conserva los conversores originales de finales de los 80, los 90 y principios de los 2000 en especial el cmpeg encoder de Christian michel , que me contacte por favor en mi mail (está al final) el disquete esta mal y no he podido recuperar los .exe.
 
 ### v2.0.0 - El Big Bang de la Compresión
 *   Nacimiento del script base después de muchas pruebas en la versión basura 1.0 al ser una versión que hice en su dia para MS-DOS y win9x para pasar video a xvid (divx), para **FFmpeg**.
